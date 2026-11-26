@@ -1,20 +1,39 @@
-from django.db import models
 from django.contrib.auth.models import AbstractUser
-
-# Create your models here.
-class user(AbstractUser):
-    pass 
-
-class doctor(user):
-    phone=models.CharField(max_length=8)
-    licence_number=models.CharField(max_length=6,unique=True)
-    specialities=models.ManyToManyField('Speciality', related_name='doctors', blank=True)
-class patient(user):
-    phone=models.CharField(max_length=8)
-    birth_date=models.DateField()
-    national_id=models.CharField(max_length=8,unique=True)
+from django.core.validators import MinLengthValidator, RegexValidator
+from django.db import models
+from django.utils import timezone
+from django.core.exceptions import ValidationError
 
 
+def validate_past_date(value):
+    if value >= timezone.localdate():
+        raise ValidationError("La date de naissance doit être antérieure à aujourd'hui.")
 
-class Speciality(models.Model):
-    name = models.CharField(max_length=100)
+
+class User(AbstractUser):
+    pass
+
+
+class Specialty(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.name
+
+
+class Doctor(User):
+    license_number = models.CharField(
+        max_length=6, unique=True,
+        validators=[MinLengthValidator(6)],
+    )
+    specialties = models.ManyToManyField(Specialty, related_name='doctors', blank=True)
+
+    def __str__(self):
+        return f"Dr {self.last_name} {self.first_name}"
+
+
+class Patient(User):
+    national_id = models.CharField(
+        max_length=8, unique=True,
+        validators=[MinLengthValidator(8)],
+    )

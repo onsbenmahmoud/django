@@ -1,17 +1,28 @@
+from django.core.exceptions import ValidationError
+from django.core.validators import FileExtensionValidator
 from django.db import models
+from django.utils import timezone
 
-# Create your models here.
-class status(models.TextChoices):
-    PENDING = 'Pending' , 'Pending'
-    CONFIRMED = 'Confirmed', 'Confirmed'
-    CANCELED = 'Cancelled', 'Cancelled'
 
 class Appointment(models.Model):
-    reason=models.TextField()
-    duration_minutes=models.DurationField()
-    appointment_date=models.DateTimeField()
-    created_at=models.DateTimeField(auto_now_add=True)
-    updated_at=models.DateTimeField(auto_now=True)
-    status=models.CharField(max_length=10 ,choices=status.choices, defaukt=status.PENDING )
-    doctor=models.ForeignKey('AccountApp.doctor',on_delete=models.CASCADE , related_name='appointements')
-    patient=models.ForeignKey('AccountApp.patient' ,on_delete=models.CASCADE , related_name='appointements')
+    class Status(models.TextChoices):
+        PENDING = 'PENDING', 'En attente'
+        CONFIRMED = 'CONFIRMED', 'Confirmé'
+        CANCELLED = 'CANCELLED', 'Annulé'
+
+    doctor = models.ForeignKey('AccountApp.Doctor', on_delete=models.CASCADE,
+                               related_name='appointments')
+    patient = models.ForeignKey('AccountApp.Patient', on_delete=models.CASCADE,
+                                related_name='appointments')
+    appointment_date = models.DateTimeField()
+    reason = models.TextField()
+    prescription = models.FileField(
+        upload_to='prescriptions/', blank=True,
+        validators=[FileExtensionValidator(allowed_extensions=['pdf'])],
+    )
+    status = models.CharField(max_length=10, choices=Status.choices,
+                              default=Status.PENDING)
+    doctor = models.ForeignKey('AccountApp.Doctor', on_delete=models.CASCADE,
+                               related_name='appointments')
+    patient = models.ForeignKey('AccountApp.Patient', on_delete=models.CASCADE,
+                                related_name='appointments')
